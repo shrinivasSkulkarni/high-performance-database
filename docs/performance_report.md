@@ -89,3 +89,30 @@ The composite index `idx_products_category_price` was created on `(category, pri
 - **Result:** 60 matching products
 
 This single plan run suggests the index can reduce the work required for this query. The timing is not directly comparable to the Python benchmark median above because measurement methods differ. Repeated, controlled benchmarks are needed to establish a reliable performance improvement.
+
+### 8. Latest Optimized Benchmark Results
+
+A new benchmark run was performed using `scripts/benchmark_optimized.py` with seven measured executions per query.
+
+| Query | Result | Minimum (ms) | Median (ms) | Maximum (ms) |
+|---|---:|---:|---:|---:|
+| Q1: Delivered orders in October 2025 | 903 | 0.879 | 1.104 | 1.552 |
+| Q2: Electronics products priced 100–1000 | 60 | 0.203 | 0.223 | 0.284 |
+| Q3: Monthly order count and total for June 2025 | 4,062 | 1.753 | 1.982 | 2.093 |
+
+**Q3 total order amount:** 35,257,276.17
+
+#### Interpretation
+
+- Q1 returned 903 delivered orders, with a median measured time of 1.104 ms.
+- Q2 returned 60 matching products, with a median measured time of 0.223 ms.
+- Q3 returned 4,062 orders and a total amount of 35,257,276.17, with a median measured time of 1.982 ms.
+- All three queries returned consistent results during the measured runs.
+
+#### Benchmark Limitations
+
+These measurements include Python-to-MySQL execution and result-fetch overhead. Timing may vary with cache state, system load, and database conditions.
+
+The latest results should not be compared directly with earlier medians as proof of improvement unless both benchmark runs use the same methodology and controlled conditions. The initial query execution also serves as the result-validation run in the current optimized benchmark script, so it is not a separate warm-up run.
+
+The recorded results are available in `results/optimized_benchmark.txt`.
