@@ -18,3 +18,7 @@ ON orders (order_date);
 CREATE INDEX idx_orders_date_total
 ON orders (order_date, total_amount);
 
+
+-- Supports filtering products by category and price.
+CREATE INDEX idx_products_category_price
+ON products (category, price);

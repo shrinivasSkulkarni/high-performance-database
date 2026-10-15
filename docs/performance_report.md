@@ -72,3 +72,20 @@ Further work should include repeated controlled benchmarks, product-query index 
 
 The current results demonstrate the practical value of query-plan analysis and targeted indexing in MySQL.
 
+
+### 7. Product Query Index Experiment
+
+#### Q2: Filter products by category and price
+
+The query filters products where `category = 'Electronics'` and `price` is between 100 and 1000.
+
+Before adding a product-specific index, `EXPLAIN ANALYZE` reported a table scan of 1,000 products, with 60 rows matching the filter.
+
+The composite index `idx_products_category_price` was created on `(category, price)`. After adding it, `EXPLAIN ANALYZE` reported a covering index range scan using this index and returning the same 60 matching rows.
+
+- **Index:** `idx_products_category_price`
+- **Columns:** `category, price`
+- **Observed plan time:** approximately 0.11 ms for the aggregate
+- **Result:** 60 matching products
+
+This single plan run suggests the index can reduce the work required for this query. The timing is not directly comparable to the Python benchmark median above because measurement methods differ. Repeated, controlled benchmarks are needed to establish a reliable performance improvement.
