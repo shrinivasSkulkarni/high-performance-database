@@ -1,58 +1,74 @@
+
 # High-Performance Database System
 ## Database Performance Optimization Report
 
 ### 1. Project Overview
 
-This project demonstrates database performance optimization using MySQL 9.3. A sample e-commerce database was populated with 261,000 records across five tables.
+This project evaluates MySQL query performance using synthetic e-commerce data and indexing techniques.
 
-### 2. Database Tables
+- **Database:** MySQL 9.3.0
+- **Total rows:** 261,000
+- **Customers:** 10,000
+- **Products:** 1,000
+- **Orders:** 50,000
+- **Order items:** 150,000
+- **Payments:** 50,000
 
-| Table | Records |
-|---|---:|
-| customers | 10,000 |
-| products | 1,000 |
-| orders | 50,000 |
-| order_items | 150,000 |
-| payments | 50,000 |
-| **Total** | **261,000** |
+### 2. Indexes Implemented
 
-### 3. Optimization Approach
+| Index | Columns | Purpose |
+|---|---|---|
+| `idx_orders_status_date` | `status, order_date` | Filters orders by status and date |
+| `idx_orders_order_date` | `order_date` | Supports date-range queries |
+| `idx_orders_date_total` | `order_date, total_amount` | Covers monthly order count and total aggregation |
 
-The initial `EXPLAIN ANALYZE` results showed full table scans for queries filtering the `orders` table. Two indexes were introduced:
+The composite index supports queries filtering on both status and date. The date index supports date-range filtering. The covering index includes the date and total amount columns required by the monthly aggregation query, potentially reducing table access.
 
-- `idx_orders_status_date` on `(status, order_date)`
-- `idx_orders_order_date` on `(order_date)`
+### 3. Benchmark Results
 
-Subsequent execution plans confirmed that MySQL used index range scans for both queries.
+Times below are median execution measurements in milliseconds, collected using the Python benchmark script with seven measured runs per query.
 
-### 4. Benchmark Results
-
-Median execution times from the initial baseline and the latest post-indexing benchmark:
-
-| Query | Before | After | Change |
+| Query | Before indexes | Latest measured median | Observed change |
 |---|---:|---:|---:|
-| Orders by status and date | 8.629 ms | 1.076 ms | 87.5% faster |
-| Products by category and price | 0.283 ms | 0.534 ms | 88.7% slower |
-| Monthly order aggregation | 5.448 ms | 4.703 ms | 13.7% faster |
+| Q1: Delivered orders in October 2025 | 8.629 ms | 1.078 ms | 87.5% faster |
+| Q2: Electronics products priced 100–1000 | 0.283 ms | 0.692 ms | Slower in this run |
+| Q3: Monthly order count and total for June 2025 | 5.448 ms | 1.702 ms | 68.8% faster |
 
-The product query did not receive a new index. Its small timing difference may reflect system load, caching, or measurement overhead and should not be interpreted as an indexing regression.
+**Important:** These are observed measurements, not guaranteed performance figures. The benchmark includes Python-to-MySQL execution and result-fetch overhead, and timings can vary with caching and system load.
 
-### 5. Query Execution Plan Findings
+Q2 does not use the new order indexes. Its sub-millisecond timings are particularly sensitive to measurement variability. A product-specific index could be evaluated separately if Q2 performance is important.
 
-**Orders by status and date:** MySQL changed from scanning 50,000 rows to a covering index range scan returning 903 matching rows. The observed `EXPLAIN ANALYZE` execution time decreased from 18.5 ms to 1.29 ms.
+### 4. Query Plan Analysis
 
-**Monthly order aggregation:** MySQL changed from scanning 50,000 rows to an index range scan returning 4,062 matching rows. The observed `EXPLAIN ANALYZE` execution time decreased from 18.3 ms to 8.64 ms.
+#### Q1: Filter by status and date
+
+Before indexing, MySQL scanned approximately 50,000 rows.
+
+After adding `idx_orders_status_date`, `EXPLAIN ANALYZE` reported a covering index range scan returning 903 matching rows, with an observed total time of approximately 1.29 ms in that plan run.
+
+#### Q3: Monthly order aggregation
+
+Before indexing, MySQL scanned approximately 50,000 rows.
+
+The date index reduced the work to a range scan of approximately 4,062 matching rows. A subsequent covering index on `(order_date, total_amount)` allowed MySQL to perform a covering index range scan.
+
+In the observed plan runs, the covering-index plan took approximately 2.25 ms compared with approximately 8.73 ms for the earlier date-index plan. These individual plan timings can vary between executions.
+
+### 5. Query Result Validation
+
+The benchmark returned consistent expected results in the recorded runs:
+
+- **Q1:** 903 delivered orders
+- **Q2:** 60 matching products
+- **Q3:** 4,062 orders with a total amount of 35,257,276.17
+
+The unchanged result counts and total support the conclusion that the indexing changes improved access paths without changing the intended query results.
 
 ### 6. Conclusion
 
-The indexing experiment demonstrated that suitable indexes can reduce the number of rows examined and improve query response times. The largest benchmark improvement occurred in the order status and date query.
+The order indexes improved the observed performance of the tested order queries, especially Q1 and Q3. The covering index further reduced the work required for monthly aggregation.
 
-Further work should include repeatable benchmark runs, testing under concurrent workloads, evaluating index storage overhead, and analyzing additional query patterns.
+Further work should include repeated controlled benchmarks, product-query index evaluation, and measurement under larger datasets and concurrent workloads.
 
-### 7. Reproducibility Notes
+The current results demonstrate the practical value of query-plan analysis and targeted indexing in MySQL.
 
-- Database: MySQL 9.3.0
-- Dataset: Synthetic test data
-- Benchmark: Seven measured runs per query
-- Performance results depend on hardware, caching, database state, and system activity.
-- The reported times are observations from this test environment, not universal performance guarantees.
