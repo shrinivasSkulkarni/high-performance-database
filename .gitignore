@@ -1,0 +1,13 @@
+.DS_Store
+.env
+*.log
+backups/*
+!backups/.gitkeep
+
+# Python virtual environment
+.venv/
+__pycache__/
+.venv/
+__pycache__/
+*.py[cod]
+.env
