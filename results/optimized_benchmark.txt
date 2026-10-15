@@ -1,0 +1,32 @@
+High-Performance Database System
+Optimized Query Benchmark Results
+
+Database: high_performance_db
+Benchmark script: scripts/benchmark_optimized.py
+Measured runs per query: 7
+
+Q1: Delivered orders in October 2025
+Result: 903
+Minimum: 0.879 ms
+Median: 1.104 ms
+Maximum: 1.552 ms
+
+Q2: Electronics products priced 100-1000
+Result: 60
+Minimum: 0.203 ms
+Median: 0.223 ms
+Maximum: 0.284 ms
+
+Q3: Monthly order count and total for June 2025
+Result: 4062 orders
+Total order amount: 35257276.17
+Minimum: 1.753 ms
+Median: 1.982 ms
+Maximum: 2.093 ms
+
+Notes:
+- Each query was measured 7 times.
+- Results were checked for consistency across measured runs.
+- Timings include Python-to-MySQL execution and result-fetch overhead.
+- Results may vary with cache state, system load, and database conditions.
+- These results alone do not establish a controlled before-and-after performance comparison.
