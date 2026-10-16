@@ -1,7 +1,10 @@
 
+import csv
 import getpass
 import statistics
 import time
+from datetime import datetime
+from pathlib import Path
 
 import mysql.connector
 
@@ -29,6 +32,7 @@ QUERIES = {
 }
 
 REPEATS = 7
+OUTPUT_FILE = Path("benchmarks/optimized_benchmark.csv")
 
 
 def main():
@@ -45,36 +49,69 @@ def main():
 
     try:
         cursor = connection.cursor()
+        OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        file_exists = OUTPUT_FILE.exists() and OUTPUT_FILE.stat().st_size > 0
 
-        print("\nINDEXED QUERY BENCHMARK")
-        print("Uses the indexes currently present in the database.")
-        print(f"Measured runs per query: {REPEATS}\n")
+        with OUTPUT_FILE.open("a", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "timestamp",
+                "query",
+                "runs",
+                "result",
+                "minimum_ms",
+                "median_ms",
+                "maximum_ms",
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        for name, query in QUERIES.items():
-            cursor.execute(query)
-            expected_result = cursor.fetchall()
+            if not file_exists:
+                writer.writeheader()
 
-            timings = []
+            print("\nINDEXED QUERY BENCHMARK")
+            print(f"Measured runs per query: {REPEATS}")
+            print(f"CSV output: {OUTPUT_FILE}\n")
 
-            for _ in range(REPEATS):
-                start = time.perf_counter()
+            for name, query in QUERIES.items():
                 cursor.execute(query)
-                result = cursor.fetchall()
-                elapsed_ms = (time.perf_counter() - start) * 1000
-                timings.append(elapsed_ms)
+                expected_result = cursor.fetchall()
+                timings = []
 
-                if result != expected_result:
-                    raise RuntimeError(
-                        f"Unexpected result change for {name}"
-                    )
+                for _ in range(REPEATS):
+                    start = time.perf_counter()
+                    cursor.execute(query)
+                    result = cursor.fetchall()
+                    elapsed_ms = (time.perf_counter() - start) * 1000
+                    timings.append(elapsed_ms)
 
-            print(name)
-            print(f"  Result: {expected_result}")
-            print(f"  Minimum: {min(timings):.3f} ms")
-            print(f"  Median:  {statistics.median(timings):.3f} ms")
-            print(f"  Maximum: {max(timings):.3f} ms\n")
+                    if result != expected_result:
+                        raise RuntimeError(
+                            f"Unexpected result change for {name}"
+                        )
+
+                minimum = min(timings)
+                median = statistics.median(timings)
+                maximum = max(timings)
+
+                print(name)
+                print(f"  Result: {expected_result}")
+                print(f"  Minimum: {minimum:.3f} ms")
+                print(f"  Median:  {median:.3f} ms")
+                print(f"  Maximum: {maximum:.3f} ms\n")
+
+                writer.writerow({
+                    "timestamp": datetime.now().astimezone().isoformat(
+                        timespec="seconds"
+                    ),
+                    "query": name,
+                    "runs": REPEATS,
+                    "result": repr(expected_result),
+                    "minimum_ms": f"{minimum:.3f}",
+                    "median_ms": f"{median:.3f}",
+                    "maximum_ms": f"{maximum:.3f}",
+                })
 
         cursor.close()
+        print(f"Results saved to {OUTPUT_FILE}")
 
     finally:
         connection.close()
