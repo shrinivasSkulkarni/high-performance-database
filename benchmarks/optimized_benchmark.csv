@@ -2,3 +2,6 @@ timestamp,query,runs,result,minimum_ms,median_ms,maximum_ms
 2026-10-16T15:46:19+05:30,Q1: Delivered orders in October 2025,7,"[(903,)]",0.622,0.663,0.945
 2026-10-16T15:46:19+05:30,Q2: Electronics products priced 100-1000,7,"[(60,)]",0.165,0.183,0.207
 2026-10-16T15:46:19+05:30,Q3: Monthly order count and total for June 2025,7,"[(4062, Decimal('35257276.17'))]",1.704,1.764,2.615
+2026-10-18T22:50:18+05:30,Q1: Delivered orders in October 2025,7,"[(903,)]",1.112,1.437,1.559
+2026-10-18T22:50:18+05:30,Q2: Electronics products priced 100-1000,7,"[(60,)]",0.263,0.291,0.530
+2026-10-18T22:50:18+05:30,Q3: Monthly order count and total for June 2025,7,"[(4062, Decimal('35257276.17'))]",1.850,2.105,3.538
